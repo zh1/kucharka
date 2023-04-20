@@ -54,31 +54,51 @@ for recipe in recipe_list:
     if (serve_unit is not None):
         recipe["serve_unit"] = serve_unit.get_text()
 
-    ingredient_items = ingredients.find_all("p", {"class": "b-parameters__item"})
 
-    ingredient_list = []
-    recipe_ingredient_id = 1
-    for item in ingredient_items:
-        ingredient_dict = {"id": recipe_ingredient_id}
-        ingredient_dict["recipe_id"] = i
+    ingredient_nutrition_url = "https://www.toprecepty.cz" + recipe_detail_soup.find("a", {"class": "b-parameters__btn b-parameters__btn--modal btn btn--block"})["href"]
+    ingredient_nutrition_html = urlopen(ingredient_nutrition_url).read()
+    ingredient_nutrition_soup = BeautifulSoup(ingredient_nutrition_html, features="html.parser")
 
-        ingredient_amount = item.find("span", {"data-portions-target": "value"})
-        if (ingredient_amount is not None):
-            ingredient_dict["ingredient_unit"] = ingredient_amount.get_text(strip=True)
-        
-        ingredient_name = item.find("span")
-        if (ingredient_name is not None):
-            ingredient_dict["ingredient_name"] = ingredient_name.get_text().replace('\n', '.').replace('\t', '.')
+    recipe["ingredient_nutrition_url"] = ingredient_nutrition_url
 
-        ingredient_section = item.find("label", {"class": "b-parameters__label"})
-        if (ingredient_section is not None):
-            ingredient_section_label = ingredient_section.get_text()
-        ingredient_dict["ingredient_section"] = ingredient_section_label
-        
-        ingredient_list.append(ingredient_dict)
+    grid = ingredient_nutrition_soup.find_all("table")
 
-        recipe_ingredient_id = recipe_ingredient_id + 1
+    nutrition_table_html = grid[0]
+    ingredient_table_html = grid[1]
 
+    with open("nutritions.html", "w", encoding='utf-8') as nutritions_file:
+        nutritions_file.write(str(nutrition_table_html))
+
+    with open("ingredients.html", "w", encoding='utf-8') as ingredients_file:
+        ingredients_file.write(str(ingredient_table_html))
+    
+    print(recipe)
+#
+#    ingredient_items = ingredients.find_all("p", {"class": "b-parameters__item"})
+#
+#    ingredient_list = []
+#    recipe_ingredient_id = 1
+#    for item in ingredient_items:
+#        ingredient_dict = {"id": recipe_ingredient_id}
+#        ingredient_dict["recipe_id"] = i
+#
+#        ingredient_amount = item.find("span", {"data-portions-target": "value"})
+#        if (ingredient_amount is not None):
+#            ingredient_dict["ingredient_unit"] = ingredient_amount.get_text(strip=True)
+#        
+#        ingredient_name = item.find("span")
+#        if (ingredient_name is not None):
+#            ingredient_dict["ingredient_name"] = ingredient_name.contents[-1].strip()
+#
+#        ingredient_section = item.find("label", {"class": "b-parameters__label"})
+#        if (ingredient_section is not None):
+#            ingredient_section_label = ingredient_section.get_text()
+#        ingredient_dict["ingredient_section"] = ingredient_section_label
+#        
+#        ingredient_list.append(ingredient_dict)
+#
+#        recipe_ingredient_id = recipe_ingredient_id + 1
+#
     #nutrition_items = ingredients.find_all("p", {"class": "b-parameters__item"})
 #
     #nutrition_list = []
@@ -86,7 +106,12 @@ for recipe in recipe_list:
     #for item in ingredient_items:
     #     pass
 
-print(recipe)
-print(ingredient_list)
+#print(recipe)
+#print(ingredient_list)
+#
+#with open("ingredients.json", "w", encoding='utf-8') as ingredients_file:
+#    ingredients_file.write(str(ingredient_list))
 
+#print(ingredient_name)
+#print(ingredient_name.contents[-1].strip())
 #    i = i + 1
