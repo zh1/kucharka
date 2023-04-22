@@ -1,0 +1,22 @@
+,recipe_id,name,value,unit
+0,1,Energie,6 059,6 059 kJ / 1 448 kcal
+1,1,Bílkoviny,"151,86","151,86 g"
+2,1, – z toho živočišné bílkoviny,"133,86","133,86 g"
+3,1, – z toho rostlinné bílkoviny,"18,00","18,00 g"
+4,1,Tuky,"36,15","36,15 g"
+5,1, – nasycené,"6,52","6,52 g"
+6,1, – nenasycené,"23,29","23,29 g"
+7,1, –– mononenasycené,"16,59","16,59 g"
+8,1, –– polynenasycené,"6,71","6,71 g"
+9,1, ––– omega 3,"1,94","1,94 g"
+10,1,Vláknina,"23,18","23,18 g"
+11,1,Cholesterol,793,"
+793 mg
+	"
+12,1,Sodík,"3,71","
+3,71 g
+	"
+13,1,Sůl,"8,77","8,77 g"
+14,1,Sacharidy,"117,10","117,10 g"
+15,1, – cukry,"10,30","10,30 g"
+16,1, ––– laktóza,"0,00","0,00 g"
