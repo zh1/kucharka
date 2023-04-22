@@ -1,6 +1,7 @@
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from pandas import DataFrame
+import csv
 
 url = "https://www.toprecepty.cz/vsechny_recepty.php"
 html = urlopen(url).read()
@@ -117,9 +118,9 @@ for recipe in recipe_list:
 recipe_df = DataFrame(recipe_list_2)
 ingredient_df = DataFrame(ingredient_list)
 nutrition_df = DataFrame(nutrition_list)
-recipe_df.to_csv("recipe.csv", sep=',', encoding='utf-8', quotechar='"')
-ingredient_df.to_csv("ingredient.csv", sep=',', encoding='utf-8', quotechar='"')
-nutrition_df.to_csv("nutrition.csv", sep=',', encoding='utf-8', quotechar='"')
+recipe_df.to_csv("recipe.csv", sep=',', encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+ingredient_df.to_csv("ingredient.csv", sep=',', encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+nutrition_df.to_csv("nutrition.csv", sep=',', encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
 
 #print(recipe_df)
 #print(ingredient_df)
