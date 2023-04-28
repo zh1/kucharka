@@ -27,9 +27,15 @@ for article in articles:
 ## comment this line to make it run for all recipes on the page
 #recipe_list = [recipe_list[7]]
 recipe_list_2 = []
+ingredient_list = []
+nutrition_list = []
+tag_list = []
+step_list = []
+comment_list = []
+
 i = 1
 for recipe in recipe_list:
-    print(recipe)
+
     recipe_detail_html = urlopen(recipe["recipe_link"]).read()
     recipe_detail_soup = BeautifulSoup(recipe_detail_html, features="html.parser")
     
@@ -62,19 +68,66 @@ for recipe in recipe_list:
 
     sections = ["Suroviny"]
     for section in recipe_sections:
-        section_name = section.find("b").get_text().strip().replace(":", "")
+        section_names = section.find("b")
+        if (section_names is not None):
+            section_name = section_names.get_text().strip().replace(":", "")
         sections.append(section_name)
 
     recipe["sections"] = sections
     recipe_list_2.append(recipe)
 
-    #ingredient_nutrition_url = "https://www.toprecepty.cz" + recipe_detail_soup.find("a", {"class": "b-parameters__btn b-parameters__btn--modal btn btn--block"})["href"]
+    recipe["favourites_cnt"] = recipe_detail_soup.find("a", {"class": "ajax b-steps__link b-steps__link--favourite item-icon"}).get_text()
+
+    tags = recipe_detail_soup.find("div", {"class": "b-recipe-info__tags"}).find_all("li")
+    for tag in tags:
+        tag_dict = {}
+        tag_dict["main_category_ind"] = False if tag.find("a", {"class": "tag tag--border"}) else True
+
+        #tag.find("a").get_text()
+        tag_dict["recipe_id"] = recipe["id"]
+        tag_dict["name"] = tag.get_text()
+        tag_list.append(tag_dict)
+
+    steps = recipe_detail_soup.find("ol", {"class": "b-steps__list"}).find_all("li", {"class": "b-steps__item"})
+    step_cnt = 1
+    for step in steps:
+        step_dict = {}
+        step_dict["step_link"] = step.find("p", {"class": "b-steps__link-wrap"})
+
+        step_dict["recipe_id"] = recipe["id"]
+        step_dict["name"] = step.get_text()
+        step_dict["order"] = step_cnt
+        step_cnt = step_cnt + 1
+        step_list.append(step_dict)
+
+    comments = recipe_detail_soup.find("div", {"class": "b-comments"}).find_all("div", {"class": "b-comment"})
+    for comment in comments:
+        comment_dict = {}
+
+        comment_author = comment.find("span", {"class": "author__name"})
+        if (comment_author is not None):
+            author = comment_author.get_text().strip().replace(":", "")
+        comment_dict["author"] = author
+
+        comment_dict["recipe_id"] = recipe["id"]
+
+        comment_date = comment.find("p", {"class": "b-comment__date"})
+        if (comment_date is not None):
+            date = comment_date.get_text().strip()
+        comment_dict["date"] = date
+
+        comment_text = comment.find("div", {"class": "b-comment__content"})
+        if (comment_text is not None):
+            text = comment_text.get_text()
+        comment_dict["text"] = text
+
+        comment_list.append(comment_dict)
+
     ingredient_nutrition_url = "https://www.toprecepty.cz/nutricni-hodnoty/" + recipe["recipe_source_id"]
     ingredient_nutrition_html = urlopen(ingredient_nutrition_url).read()
     ingredient_nutrition_soup = BeautifulSoup(ingredient_nutrition_html, features="html.parser")
 
     recipe["ingredient_nutrition_url"] = ingredient_nutrition_url
-    print(recipe)
 
     grid = ingredient_nutrition_soup.find_all("table")
 
@@ -83,9 +136,7 @@ for recipe in recipe_list:
 
     ingredient_rows = ingredient_table_html.find_all("tr")
     ingredient_rows.pop(0)
-    
-    print(sections)
-    ingredient_list = []
+
     empty_table_rows = 0
     for row in ingredient_rows:
         ingredient = {}
@@ -102,7 +153,6 @@ for recipe in recipe_list:
 
     nutrition_rows = nutrition_table_html.find_all("tr")    
     
-    nutrition_list = []
     for row in nutrition_rows:
         nutrition = {}
         nutrition["recipe_id"] = recipe["id"]
@@ -111,16 +161,25 @@ for recipe in recipe_list:
         nutrition["unit"] = row.find("th").get_text()
         nutrition_list.append(nutrition)
     
-    recipe = {}
     sections = []
     empty_table_rows = 0
+    i = i + 1
+    print(recipe["recipe_source_id"])
+    recipe = {}
 
 recipe_df = DataFrame(recipe_list_2)
 ingredient_df = DataFrame(ingredient_list)
 nutrition_df = DataFrame(nutrition_list)
-recipe_df.to_csv("recipe.csv", sep=',', encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
-ingredient_df.to_csv("ingredient.csv", sep=',', encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
-nutrition_df.to_csv("nutrition.csv", sep=',', encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+tag_df = DataFrame(tag_list)
+step_df = DataFrame(step_list)
+comment_df = DataFrame(comment_list)
+
+recipe_df.to_csv("recipe.csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+ingredient_df.to_csv("ingredient.csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+nutrition_df.to_csv("nutrition.csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+tag_df.to_csv("tag.csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+step_df.to_csv("step.csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+comment_df.to_csv("comment.csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
 
 #print(recipe_df)
 #print(ingredient_df)
