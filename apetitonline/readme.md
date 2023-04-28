@@ -71,4 +71,34 @@ receipt_data_items = article.find_all("span", {"class": "a-teaser__data-item"})
 ```
 
 ## Skript apetitonline_iteration_3.py
-TBD
+Treti skript je az po radek 28 stejny jako skript predchozi. Navic pridavam pouze sretezeni s celou URL adresou na radcich 18 a 19. Ve `for` cyklu potom jeste vsechny polozky, ktery jsem vyparsoval, pridam do promenne typu dictionary a pro kazdy recept pridam tento slovnik/dictionary do promenne typu seznam `receipt_dict`.
+
+```python
+    receipt_dict = {
+        "receipt_name": receipt_name,
+        "receipt_link": receipt_link,
+        "receipt_image": receipt_image,
+        "receipt_rating": receipt_rating,
+        "receipt_stars": receipt_stars,
+        "receipt_time": receipt_time,
+        "receipt_difficulty": receipt_difficulty
+    }
+
+    receipt_list.append(receipt_dict)
+```
+
+V dalsim kroku prochazim seznam z kroku predchoziho, pro kazdy recept stahnu znovu HTML kod detailu receptu a rozparsuju pomoci `BeautifulSoup`. Na prvni strane (https://www.apetitonline.cz/recepty) je 24 receptu, vic jsem zatim nezkousel. Zase, abych pochopil, jak spravne z HTML dostat informace, ulozil jsem si prvnich 24 receptu do souboru (`article_details_[i].html`).
+
+```python
+i = 1
+for receipt in receipt_list:
+    receipt_detail_html = urlopen(receipt["receipt_link"]).read()
+    receipt_detail_soup = BeautifulSoup(receipt_detail_html, features="html.parser")
+    
+    with open("article_details_" + str(i) + ".html", "w", encoding='utf-8') as article_details_file:
+        article_details_file.write(str(receipt_detail_soup))
+
+    i = i + 1
+```
+
+## Skript apetitonline_iteration_4_ingredients.py
