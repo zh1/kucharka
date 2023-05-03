@@ -1,0 +1,26 @@
+--čištění:
+SELECT
+	cast(column1 as int) as id,
+	cast(recipe_source_id as varchar) as source_id,
+	cast(recipe_name as nvarchar) as name,
+	cast(recipe_link as nvarchar) as url,
+	cast(recipe_image as nvarchar) as image_url,
+--id sloupec se opakuje??, odstraníme?
+	cast(replace(recipe_stars, ',', '.') as float) as rating,
+	cast(replace(recipe_rating_cnt, 'x)', ''), '(') as rating_cnt,
+	cast(recipe_author as varchar) as author,
+-- recipe_created ? Nevím? Zkontrolovat?
+	CASE
+		when recipe_created LIKE 'před 2 hodinami' THEN DATEADD(hour, -CAST(SUBSTRING(created_at, 6, 2) AS int), GETDATE())
+		ELSE cast(recipe_created as varchar), 'dd.mm.yyyy hh24:mi') 
+		END as created,
+	cast(LEFT(recipe_comment_cnt, CHARINDEX(' ', recipe_comment_cnt) - 1) AS int) as comment_cnt,	
+	cast(recipe_time as varchar) as time,
+	cast(recipe_cnt as int) as serve_cnt,
+	cast(serve_unit as varchar) as serve_unit),
+	cast(sections as varchar) as sections,
+	cast(replace(favourites_cnt, 'přidat do oblíbených (', ''), 'x)', '') as favourites_cnt,
+	cast(ingredient_nutrition_url) as varchar) as ingredient_nutrion_url
+--into dbo.recept
+FROM
+recipe
