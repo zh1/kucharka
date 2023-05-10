@@ -25,3 +25,32 @@ SELECT
 	cast(ingredient_nutrition_url as varchar) as ingredient_nutrion_url
 from
 recipe
+
+SELECT
+	--convert(bigint, id) as tag_id
+	cast(main_category_ind as bit) as main_category,
+	cast(recipe_id as bigint) as recipe_id,
+	cast(name as nvarchar) as tag_name
+FROM
+tag
+
+SELECT
+	-- první sloupec?
+	CAST(step_link as ntext) as step_url,
+	cast(recipe_id as bigint) as recipe_id,
+	cast(name as nvarchar) as name,
+	--??nejde cast(order as bigint) as order
+from
+step
+
+SELECT
+FROM
+nutrition
+
+SELECT
+FROM
+ingredient
+
+SELECT
+FROM
+comment
