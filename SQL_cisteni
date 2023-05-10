@@ -1,26 +1,27 @@
 --čištění:
 SELECT
-	cast(column1 as int) as id,
-	cast(recipe_source_id as varchar) as source_id,
+	convert(bigint, id) as recipe_id,
+	cast(recipe_source_id as bigint) as source_id,
 	cast(recipe_name as nvarchar) as name,
-	cast(recipe_link as nvarchar) as url,
-	cast(recipe_image as nvarchar) as image_url,
---id sloupec se opakuje??, odstraníme?
+	cast(recipe_link as ntext ) as url,
+	cast(recipe_image as ntext) as image_url,
+	cast(recipe_batch_id as bigint) as batch_id,
+	cast(id as bigint) as generated_id,
 	cast(replace(recipe_stars, ',', '.') as float) as rating,
-	cast(replace(recipe_rating_cnt, 'x)', ''), '(') as rating_cnt,
+	cast(REPLACE(SUBSTRING(recipe_rating_cnt, 2, 1), 'x', '0') as nvarchar) AS recipe_rating_cnt,
 	cast(recipe_author as varchar) as author,
--- recipe_created ? Nevím? Zkontrolovat?
-	CASE
-		when recipe_created LIKE 'před 2 hodinami' THEN DATEADD(hour, -CAST(SUBSTRING(created_at, 6, 2) AS int), GETDATE())
-		ELSE cast(recipe_created as varchar), 'dd.mm.yyyy hh24:mi') 
-		END as created,
+	CASE 
+    WHEN recipe_created LIKE 'před%' THEN DATEADD(hour, -2, GETDATE())
+    ELSE CONVERT(DATETIME, recipe_created, 105)
+	END AS created,
 	cast(LEFT(recipe_comment_cnt, CHARINDEX(' ', recipe_comment_cnt) - 1) AS int) as comment_cnt,	
-	cast(recipe_time as varchar) as time,
-	cast(recipe_cnt as int) as serve_cnt,
-	cast(serve_unit as varchar) as serve_unit),
-	cast(sections as varchar) as sections,
-	cast(replace(favourites_cnt, 'přidat do oblíbených (', ''), 'x)', '') as favourites_cnt,
-	cast(ingredient_nutrition_url) as varchar) as ingredient_nutrion_url
---into dbo.recept
-FROM
+	try_cast(replace(left(trim(replace(replace(recipe_time, char(9), ''), char(10), '')), charindex('(', trim(replace(replace(recipe_time, char(9), ''), char(10), '')))), ' min (', '') as bigint) as recipe_time_total_bigint,
+	replace(right(trim(replace(replace(recipe_time, char(9), ''), char(10), '')), len(trim(replace(replace(recipe_time, char(9), ''), char(10), ''))) - charindex('(', trim(replace(replace(recipe_time, char(9), ''), char(10), '')))), ')', '') as recipe_time_detail_varchar,
+	cast(serve_cnt as nvarchar) as serve_cnt,
+	cast(serve_unit as nvarchar) as serve_unit,
+	--sections ?? Netuším zase jak sloupec rozdělit, jak s tím pracovat?
+	--favourites_cnt??? nedaří se mi dostat na správný výsledek, nevím jak mám rozdělit, že sloupec může být s hodnotou v závorkách i bez 
+	-- měla jsem rozepsáno takto - cast(REPLACE(REPLACE(favourites_cnt, 'Přidat do oblíbených', ''), 'x)', '') as nvarchar) AS favourites_cnt_cleaned
+	cast(ingredient_nutrition_url as varchar) as ingredient_nutrion_url
+from
 recipe
