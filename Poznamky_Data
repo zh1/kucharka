@@ -1,0 +1,16 @@
+Dotazy k přípravám dat v SQL
+1.	Čištění tabulky recipe:
+a.	Sloupec recipe_created – budeme nechávat datum a čas v jedné buňce? Nebo uděláme 2 sloupce? Co s hodnotami jen v hodinách?
+b.	Sloupec time_of_cooking – Nechávat v jednom sloupci jen celkový čas, dva sloupce s časem přípravy a časem tepelné úpravy, nebo tři sloupce se všemi časy?
+
+2.	Čištění tabulky ingredient:
+a.	Co se sloupcem description – bude nám k něčemu? Jak ho upravit, pokud ho budeme nechávat?
+
+3.	Čištění tabulky nutrition:
+a.	Ve sloupci unit je i hodnota energie v kJ, která ve sloupci name není, budeme nějak přesouvat do sloupce name?
+
+4.	Čistění tabulky step:
+a.	Co má být ve sloupci step_link? Co ty hodnoty znamenají?
+
+5.	Tabulka comment:
+a.	Recipe_id je začátek číslování od 2, je to chyba nebo první recept nemá komenty?
