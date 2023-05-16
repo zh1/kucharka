@@ -44,6 +44,10 @@ from
 step
 
 SELECT
+recipe_id,
+	REPLACE(REPLACE(REPLACE(REPLACE(CAST(name AS NVARCHAR(MAX)), ' – ', ''), ' –– ', ''), ' ––– ', ''), ' –', '') AS nutrition_name,
+	value,
+	unit
 FROM
 nutrition
 
