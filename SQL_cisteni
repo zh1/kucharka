@@ -1,60 +1,134 @@
---čištění:
+/* DBO.RECEPT */
+​
 SELECT
-	convert(bigint, id) as recipe_id,
-	cast(recipe_source_id as bigint) as source_id,
-	cast(recipe_name as nvarchar) as name,
+	convert(bigint, id) as id,
+	cast(recipe_source_id as bigint) as zdroj_id,
+	cast(recipe_name as nvarchar) as nazev,
 	cast(recipe_link as ntext ) as url,
-	cast(recipe_image as ntext) as image_url,
-	cast(recipe_batch_id as bigint) as batch_id,
-	cast(id as bigint) as generated_id,
-	cast(replace(recipe_stars, ',', '.') as float) as rating,
-	cast(REPLACE(SUBSTRING(recipe_rating_cnt, 2, 1), 'x', '0') as nvarchar) AS recipe_rating_cnt,
-	cast(recipe_author as varchar) as author,
-	CASE 
+	cast(recipe_image as ntext) as url_obrazku,
+	cast(recipe_batch_id as bigint) as stahovani_id,
+	cast(replace(recipe_stars, ',', '.') as float) as hodnoceni,
+	cast(REPLACE(SUBSTRING(recipe_rating_cnt, 2, 1), 'x', '0') as nvarchar) AS pocet_hodnoceni,
+	cast(recipe_author as varchar) as autor,
+	recipe_created as vytvoreno,
+	/*CASE 
     WHEN recipe_created LIKE 'před%' THEN DATEADD(hour, -2, GETDATE())
-    ELSE CONVERT(DATETIME, recipe_created, 105)
-	END AS created,
-	cast(LEFT(recipe_comment_cnt, CHARINDEX(' ', recipe_comment_cnt) - 1) AS int) as comment_cnt,	
-	try_cast(replace(left(trim(replace(replace(recipe_time, char(9), ''), char(10), '')), charindex('(', trim(replace(replace(recipe_time, char(9), ''), char(10), '')))), ' min (', '') as bigint) as recipe_time_total_bigint,
-	replace(right(trim(replace(replace(recipe_time, char(9), ''), char(10), '')), len(trim(replace(replace(recipe_time, char(9), ''), char(10), ''))) - charindex('(', trim(replace(replace(recipe_time, char(9), ''), char(10), '')))), ')', '') as recipe_time_detail_varchar,
-	cast(serve_cnt as nvarchar) as serve_cnt,
-	cast(serve_unit as nvarchar) as serve_unit,
-	--sections ?? Netuším zase jak sloupec rozdělit, jak s tím pracovat?
-	--favourites_cnt??? nedaří se mi dostat na správný výsledek, nevím jak mám rozdělit, že sloupec může být s hodnotou v závorkách i bez 
-	-- měla jsem rozepsáno takto - cast(REPLACE(REPLACE(favourites_cnt, 'Přidat do oblíbených', ''), 'x)', '') as nvarchar) AS favourites_cnt_cleaned
-	cast(ingredient_nutrition_url as varchar) as ingredient_nutrion_url
+    ELSE cast(replace(recipe_created, '. ', '-') as datetime)
+	END AS created,*/
+	cast(LEFT(recipe_comment_cnt, CHARINDEX(' ', recipe_comment_cnt) - 1) AS int) as pocet_komentaru,	
+	try_cast(replace(left(trim(replace(replace(recipe_time, char(9), ''), char(10), '')), charindex('(', trim(replace(replace(recipe_time, char(9), ''), char(10), '')))), ' min (', '') as bigint) as celkovy_doba_pripravy,
+	replace(right(trim(replace(replace(recipe_time, char(9), ''), char(10), '')), len(trim(replace(replace(recipe_time, char(9), ''), char(10), ''))) - charindex('(', trim(replace(replace(recipe_time, char(9), ''), char(10), '')))), ')', '') as detail_doby_pripravy,
+	cast(serve_cnt as nvarchar) as pocet_porci,
+	cast(serve_unit as nvarchar) as jednotky_porci,
+	sections as sekce_receptu,
+	cast(replace(replace(replace(replace(replace(replace(favourites_cnt, char(9), ''), char(10), ''), N'Přidat do oblíbených', ''), '(', ''), 'x)', ''), char(160), '') as int) as pocet_oblibenych,
+	cast(ingredient_nutrition_url as varchar) as url_detail_receptu
+into kucharka_2.dbo.recept
 from
-recipe
-
-SELECT
-	--convert(bigint, id) as tag_id
-	cast(main_category_ind as bit) as main_category,
-	cast(recipe_id as bigint) as recipe_id,
-	cast(name as nvarchar) as tag_name
-FROM
-tag
-
-SELECT
-	-- první sloupec?
-	CAST(step_link as ntext) as step_url,
-	cast(recipe_id as bigint) as recipe_id,
-	cast(name as nvarchar) as name,
-	--??nejde cast(order as bigint) as order
+	dbo.recipe
+​
+/* DBO.KATEGORIE */
+select
+		row_number() over (order by name) as id,
+		replace([name], char(160), '') as nazev,
+		cast(main_category_ind as bit) as indikator_hlavni_kategorie
+into kucharka_2.dbo.kategorie
 from
-step
-
-SELECT
-recipe_id,
-	REPLACE(REPLACE(REPLACE(REPLACE(CAST(name AS NVARCHAR(MAX)), ' – ', ''), ' –– ', ''), ' ––– ', ''), ' –', '') AS nutrition_name,
-	value,
-	unit
-FROM
-nutrition
-
-SELECT
-FROM
-ingredient
-
-SELECT
-FROM
-comment
+	dbo.tag
+group by 
+		name,
+		main_category_ind
+​
+/* DBO.RECEPT_KATEGORIE */
+select
+		row_number() over (order by t.name) as id,
+		cast(r.id as bigint) as recept_id,
+		cast(k.id as bigint) as kategorie_id
+into kucharka.dbo.recept_kategorie
+from
+	dbo.tag t
+left outer join
+	kucharka.dbo.recept r
+	on (t.recipe_id = r.id)
+left outer join
+	kucharka.dbo.kategorie k
+	on (t.name = k.nazev)
+​
+/* DBO.POSTUP */
+select
+		row_number() over (order by name) as id,
+		cast(recipe_id as bigint) as recept_id,
+		replace(replace(name, char(9), ''), char(10), '') as popis,
+		cast([order] as int) as krok
+into kucharka_2.dbo.postup
+from
+	dbo.step
+​
+/* DBO.SUROVINA */
+select
+		row_number() over (order by name) as id,
+		replace(name, char(160), '') as nazev
+into kucharka_2.dbo.surovina
+from
+	dbo.ingredient
+where
+	name is not null
+group by 
+		name
+​
+/* DBO.RECEPT_SUROVINA */
+​
+select
+		row_number() over (order by i.name) as id,
+		cast(r.id as bigint) as recept_id,
+		cast(s.id as bigint) as surovina_id,
+		amount as mnozstvi
+into kucharka_2.dbo.recept_surovina
+from
+	dbo.ingredient i
+left outer join
+	kucharka_2.dbo.recept r
+	on (i.recipe_id = r.id)
+left outer join
+	kucharka_2.dbo.surovina s
+	on (i.name = s.nazev)
+where
+	name is not null
+​
+/* DBO.NUTRICNI_HODNOTA */
+select
+		row_number() over (order by name) as id,
+		name as nazev
+into kucharka_2.dbo.nutricni_hodnota
+from
+	dbo.nutrition
+group by
+		name
+​
+/* DBO.RECEPT_NUTRICNI_HODNOTA */
+select
+		row_number() over (order by n.name) as id,
+		cast(r.id as bigint) as recept_id,
+		cast(nh.id as bigint) as nutricni_hodnota_id,
+		value as mnozstvi,
+		unit as mnozstvi_jednotky
+into kucharka_2.dbo.recept_nutricni_hodnota
+from
+	dbo.nutrition n
+left outer join
+	kucharka_2.dbo.recept r
+	on (n.recipe_id = r.id)
+left outer join
+	kucharka_2.dbo.nutricni_hodnota nh
+	on (n.name = nh.nazev)
+​
+/* DBO.KOMENTAR */
+select
+		row_number() over (order by recipe_id, date, text, author) as id,
+		cast(recipe_id as bigint) as recept_id,
+		date as cas_komentare,
+		text,
+		author as autor
+into kucharka_2.dbo.komentar
+from
+	dbo.comment
