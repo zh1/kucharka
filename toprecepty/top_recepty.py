@@ -2,20 +2,26 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from pandas import DataFrame
 import csv
+import logging
+
+logging.basicConfig(filename='top_recepty.log', encoding='utf-8', level=logging.DEBUG, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 
 pages = ["https://www.toprecepty.cz/vsechny_recepty.php"]
 
 first_20_pages = []
-for page_num in range(2, 20):
+for page_num in range(2, 500):
     page_url = "https://www.toprecepty.cz/vsechny_recepty.php?stranka=" + str(page_num)
     first_20_pages.append(page_url)
 
-pages = pages + first_20_pages
+# pages = pages + first_20_pages
+pages = pages[484:499]
 
-i = 1
+#i = 1
+i = 12126
 for page in pages:
-
-    batch_id = pages.index(page)
+    print(page)
+    logging.debug('Starting page ' + page)
+    batch_id = '2-' + str(pages.index(page))
 
     url = page
     html = urlopen(url).read()
@@ -34,7 +40,7 @@ for page in pages:
             "recipe_name": recipe_name,
             "recipe_link": recipe_link,
             "recipe_image": recipe_image,
-            "recipe_batch-id": batch_id
+            "recipe_batch_id": batch_id
         }
 
         recipe_list.append(recipe_dict)
@@ -50,11 +56,13 @@ for page in pages:
 
         recipe_detail_html = urlopen(recipe["recipe_link"]).read()
         recipe_detail_soup = BeautifulSoup(recipe_detail_html, features="html.parser")
-        
+        print(recipe["recipe_link"])
+        logging.debug('Starting recipe ' + recipe["recipe_link"])
+
         recipe["id"] = i
         recipe["recipe_stars"] = recipe_detail_soup.find("span", {"class": "stars__rating"}).get_text().strip()
         recipe["recipe_rating_cnt"] = recipe_detail_soup.find("span", {"class": "stars__count"}).get_text().strip()
-        recipe["recipe_author"] = recipe_detail_soup.find_all("a", {"class": "author__link author__link--name link-mask"})[2].get_text().strip()
+        recipe["recipe_author"] = recipe_detail_soup.find_all("a", {"class": "author__link author__link--name link-mask"})[1].get_text().strip()
         #recipe["recipe_time"] = recipe_detail_soup.find("p", {"class": "b-recipe-info__info item-icon u-print"}).get_text().strip().replace('\n', '.').replace('\t', '.').replace('\xa0', ' ')
         recipe["recipe_created"] = recipe_detail_soup.find("p", {"class": "b-recipe-info__info item-icon"}).get_text().strip()
         recipe["recipe_comment_cnt"] = recipe_detail_soup.find("a", {"class": "b-recipe-info__link item-icon"}).get_text().strip()
@@ -141,6 +149,7 @@ for page in pages:
         ingredient_nutrition_soup = BeautifulSoup(ingredient_nutrition_html, features="html.parser")
 
         recipe["ingredient_nutrition_url"] = ingredient_nutrition_url
+        logging.debug('Finishing recipe ' + recipe["recipe_link"])
 
         grid = ingredient_nutrition_soup.find_all("table")
 
@@ -176,8 +185,8 @@ for page in pages:
         
         sections = []
         empty_table_rows = 0
-        print(recipe["recipe_source_id"])
         recipe = {}
+        i = i + 1
 
         recipe_df = DataFrame(recipe_list_2)
         ingredient_df = DataFrame(ingredient_list)
@@ -186,14 +195,15 @@ for page in pages:
         step_df = DataFrame(step_list)
         comment_df = DataFrame(comment_list)
 
-        recipe_df.to_csv("recipe" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
-        ingredient_df.to_csv("ingredient" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
-        nutrition_df.to_csv("nutrition" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
-        tag_df.to_csv("tag" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
-        step_df.to_csv("step" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
-        comment_df.to_csv("comment" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
-
-    i = i + 1
+        recipe_df.to_csv("data/recipe" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+        ingredient_df.to_csv("data/ingredient" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+        nutrition_df.to_csv("data/nutrition" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+        tag_df.to_csv("data/tag" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+        step_df.to_csv("data/step" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+        comment_df.to_csv("data/comment" + str(batch_id) + ".csv", sep=',', index=False, encoding='utf-8', quotechar='"', escapechar='\\', quoting=csv.QUOTE_ALL)
+    
+    logging.debug('Finishing page ' + page)
+    print(page)
 
 #print(recipe_df)
 #print(ingredient_df)

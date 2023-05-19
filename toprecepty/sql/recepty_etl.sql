@@ -1,26 +1,136 @@
-use top_recepty
+/* DBO.RECEPT */
+drop table kucharka.dbo.recept
 
-select *
+SELECT
+	convert(bigint, id) as id,
+	cast(recipe_source_id as bigint) as zdroj_id,
+	cast(recipe_name as nvarchar) as nazev,
+	cast(recipe_link as ntext ) as url,
+	cast(recipe_image as ntext) as url_obrazku,
+	cast(recipe_batch_id as bigint) as stahovani_id,
+	cast(replace(recipe_stars, ',', '.') as float) as hodnoceni,
+	cast(REPLACE(SUBSTRING(recipe_rating_cnt, 2, 1), 'x', '0') as nvarchar) AS pocet_hodnoceni,
+	cast(recipe_author as varchar) as autor,
+	recipe_created as vytvoreno,
+	/*CASE 
+    WHEN recipe_created LIKE 'před%' THEN DATEADD(hour, -2, GETDATE())
+    ELSE cast(replace(recipe_created, '. ', '-') as datetime)
+	END AS created,*/
+	cast(LEFT(recipe_comment_cnt, CHARINDEX(' ', recipe_comment_cnt) - 1) AS int) as pocet_komentaru,	
+	try_cast(replace(left(trim(replace(replace(recipe_time, char(9), ''), char(10), '')), charindex('(', trim(replace(replace(recipe_time, char(9), ''), char(10), '')))), ' min (', '') as bigint) as celkovy_doba_pripravy,
+	replace(right(trim(replace(replace(recipe_time, char(9), ''), char(10), '')), len(trim(replace(replace(recipe_time, char(9), ''), char(10), ''))) - charindex('(', trim(replace(replace(recipe_time, char(9), ''), char(10), '')))), ')', '') as detail_doby_pripravy,
+	cast(serve_cnt as nvarchar) as pocet_porci,
+	cast(serve_unit as nvarchar) as jednotky_porci,
+	sections as sekce_receptu,
+	cast(replace(replace(replace(replace(replace(replace(favourites_cnt, char(9), ''), char(10), ''), N'Přidat do oblíbených', ''), '(', ''), 'x)', ''), char(160), '') as int) as pocet_oblibenych,
+	cast(ingredient_nutrition_url as varchar) as url_detail_receptu
+into kucharka.dbo.recept
 from
-	recipe
+	dbo.recipe
+
+/* DBO.KATEGORIE */
+select
+		row_number() over (order by name) as id,
+		replace(name, char(160), '') as nazev,
+		cast(main_category_ind as bit) as indikator_hlavni_kategorie
+into kucharka.dbo.kategorie
+from
+	dbo.tag
+group by 
+		replace(name, char(160), ''),
+		cast(main_category_ind as bit)
+
+/* DBO.RECEPT_KATEGORIE */
+select
+		row_number() over (order by t.name) as id,
+		cast(r.id as bigint) as recept_id,
+		cast(k.id as bigint) as kategorie_id
+into kucharka.dbo.recept_kategorie
+from
+	dbo.tag t
+left outer join
+	kucharka.dbo.recept r
+	on (t.recipe_id = r.id)
+left outer join
+	kucharka.dbo.kategorie k
+	on (t.name = k.nazev)
+
+/* DBO.POSTUP */
+select
+		row_number() over (order by name) as id,
+		cast(recipe_id as bigint) as recept_id,
+		replace(replace(name, char(9), ''), char(10), '') as popis,
+		cast([order] as int) as krok
+into kucharka.dbo.postup
+from
+	dbo.step
+
+/* DBO.SUROVINA */
+select
+		row_number() over (order by name) as id,
+		replace(name, char(160), '') as nazev
+into kucharka.dbo.surovina
+from
+	dbo.ingredient
+where
+	name is not null
+group by 
+		name
+
+/* DBO.RECEPT_SUROVINA */
+drop table kucharka.dbo.recept_surovina
 
 select
-		cast(column1 as bigint) as id,
-		cast(recipe_source_id as varchar) as source_id,
-		trim(cast(recipe_name as varchar)) as name,
-		cast(replace(recipe_stars, ',', '.') as float) as rating,
-		replace(replace(recipe_rating_cnt, '×)', ''), '(', '') as rating_cnt,
-		trim(recipe_time) as recipe_time,
-		--case when recipe_created = 'pred 20 hodinami'
-		--	then dateadd(hour, -20, current_timestamp)
-		--	else format(cast(recipe_created as varchar), 'dd. mm. yyyy hh24:mi')
-		--end as created,
-		cast(left(recipe_comment_cnt, charindex(' ', recipe_comment_cnt) -1) as int) as comment_cnt,
-		cast(serve_cnt as int) as serve_cnt,
-		cast(serve_unit as varchar) as serve_unit,
-		cast(sections as varchar) as sections,
-		cast(recipe_link as varchar) as url,
-		cast(recipe_image as varchar) as image_url,
-		cast(ingredient_nutrition_url as varchar) as ingredient_nutrition_url
+		row_number() over (order by i.name) as id,
+		cast(r.id as bigint) as recept_id,
+		cast(s.id as bigint) as surovina_id,
+		amount as mnozstvi
+into kucharka.dbo.recept_surovina
 from
-	recipe
+	dbo.ingredient i
+left outer join
+	kucharka.dbo.recept r
+	on (i.recipe_id = r.id)
+left outer join
+	kucharka.dbo.surovina s
+	on (i.name = s.nazev)
+where
+	name is not null
+
+/* DBO.NUTRICNI_HODNOTA */
+select
+		row_number() over (order by name) as id,
+		name as nazev
+into kucharka.dbo.nutricni_hodnota
+from
+	dbo.nutrition
+group by
+		name
+
+/* DBO.RECEPT_NUTRICNI_HODNOTA */
+select
+		row_number() over (order by n.name) as id,
+		cast(r.id as bigint) as recept_id,
+		cast(nh.id as bigint) as nutricni_hodnota_id,
+		value as mnozstvi,
+		unit as mnozstvi_jednotky
+into kucharka.dbo.recept_nutricni_hodnota
+from
+	dbo.nutrition n
+left outer join
+	kucharka.dbo.recept r
+	on (n.recipe_id = r.id)
+left outer join
+	kucharka.dbo.nutricni_hodnota nh
+	on (n.name = nh.nazev)
+
+/* DBO.KOMENTAR */
+select
+		row_number() over (order by recipe_id, date, text, author) as id,
+		cast(recipe_id as bigint) as recept_id,
+		date as cas_komentare,
+		text,
+		author as autor
+into kucharka.dbo.komentar
+from
+	dbo.comment
