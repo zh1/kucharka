@@ -44,14 +44,14 @@ select
 		row_number() over (order by t.name) as id,
 		cast(r.id as bigint) as recept_id,
 		cast(k.id as bigint) as kategorie_id
-into kucharka.dbo.recept_kategorie
+into kucharka_2.dbo.recept_kategorie
 from
 	dbo.tag t
 left outer join
-	kucharka.dbo.recept r
+	kucharka_2.dbo.recept r
 	on (t.recipe_id = r.id)
 left outer join
-	kucharka.dbo.kategorie k
+	kucharka_2.dbo.kategorie k
 	on (t.name = k.nazev)
 ​
 /* DBO.POSTUP */
