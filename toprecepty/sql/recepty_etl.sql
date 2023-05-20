@@ -192,7 +192,7 @@ alter table kucharka.dbo.komentar
 
 alter table kucharka.dbo.postup
    add constraint fk_recept_postup foreign key (recept_id)
-      references kucharka.dbo.postup (id)
+      references kucharka.dbo.recept (id)
 ;
 
 alter table kucharka.dbo.recept_kategorie
